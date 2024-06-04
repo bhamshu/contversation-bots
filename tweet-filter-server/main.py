@@ -1,18 +1,22 @@
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'),
+api_key=os.environ.get('OPENAI_API_KEY'))
 import os
 
 # Set up OpenAI API key
-openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 app = Flask(__name__)
 
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'),
+api_key=os.environ.get('OPENAI_API_KEY'))
 import os
 
 # Set up OpenAI API key
-openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 app = Flask(__name__)
 
@@ -30,15 +34,13 @@ def filter_tweets():
     api_prompt += "\nOutput: List the IDs of the tweets that match the prompt, separated by commas."
 
     # Call the OpenAI API
-    response = openai.Completion.create(
-        engine='text-davinci-003',
-        prompt=api_prompt,
-        temperature=0,
-        max_tokens=100,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0
-    )
+    response = client.completions.create(engine='text-davinci-003',
+    prompt=api_prompt,
+    temperature=0,
+    max_tokens=100,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0)
     output = response.choices[0].text.strip()
 
     # Parse the output to get the filtered tweet IDs

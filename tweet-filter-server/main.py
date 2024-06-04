@@ -47,24 +47,16 @@ def filter_tweets():
     return jsonify({'filtered_tweets': filtered_tweets})
 
 
-def main():
-    # Sample tweets and prompt
-    tweets = {
-        "1": "This is a positive tweet about dogs.",
-        "2": "This tweet is negative and talks about cats.",
-        "3": "Another positive tweet about dogs."
-    }
-    prompt = "Identify if the tweet is positive and about dogs."
-
-    # Construct the payload
-    payload = {'tweets': tweets, 'prompt': prompt}
-
-    # Call the filter_tweets function directly
-    filtered_tweets = filter_tweets().get_json()['filtered_tweets']
-    print(f"Filtered tweet IDs: {filtered_tweets}")
-
 if __name__ == '__main__':
-    # Run the main function for testing
-    # main()
     # Start the Flask server
     app.run(debug=True)
+
+######## Testing
+# curl -X POST   -H "Content-Type: application/json"   -d '{
+#     "tweets": {
+#       "1": "This is a positive tweet about dogs.",
+#       "2": "This tweet is negative and talks about cats.",
+#       "3": "Another positive tweet about dogs."
+#     },
+#     "criteria": "Identify if the tweet is positive and about dogs."
+#   }'   http://localhost:5000/filter_tweets

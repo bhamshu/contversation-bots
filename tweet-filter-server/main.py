@@ -70,4 +70,4 @@ if __name__ == '__main__':
 #       "3": "Another positive tweet about dogs."
 #     },
 #     "criteria": "Identify if the tweet is positive and about dogs."
-#   }'   http://localhost:5000/filter_tweets
+#   }'   3.109.112.234/filter_tweets

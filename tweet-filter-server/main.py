@@ -11,18 +11,28 @@ def filter_tweets():
     # Get the tweets and prompt from the request data
     data = request.get_json()
     tweets = data['tweets']
-    prompt = data['prompt']
+    criteria  = data['criteria']
 
     # Construct the prompt for the OpenAI API
-    api_prompt = f"{prompt}\n\nTweets:\n"
+    tweets_with_identifiers = f"\n\nTweets:\n"
     for tweet_id, tweet_text in tweets.items():
-        api_prompt += f"Tweet ID {tweet_id}: {tweet_text}\n"
-    api_prompt += "\nOutput: List the IDs of the tweets that match the prompt, separated by commas."
+        tweets_with_identifiers += f"Tweet ID {tweet_id}: {tweet_text}\n"
+    tweets_with_identifiers += "\nOutput: List the IDs of the tweets that match the prompt, separated by commas."
 
     # Call the OpenAI API
     response = client.completions.create(
         model='text-davinci-003',
-        prompt=api_prompt,
+        messages=[
+            {
+            "role": "system",
+            "content": f"You will be provided with a list of identifiers and tweets, and your task is to return the comma separated value of the identifiers of the tweets which match these criteria: {criteria}."
+            },
+            {
+            "role": "user",
+            "content": f"{tweets_with_identifiers}"
+            }
+        ],
+        prompt=tweets_with_identifiers,
         temperature=0.7,
         top_p=1
     )

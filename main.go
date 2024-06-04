@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/launcher"
 )
 
@@ -13,11 +15,13 @@ func main() {
 		Headless(false).
 		MustLaunch()
 	browser := rod.New().ControlURL(u).MustConnect()
-	page := browser.MustPage("https://x.com/i/flow/login")
+	page := browser.MustPage("https://x.com/narendramodi")
 
 	page.MustWaitLoad()
 
-	loginTwitter(page)
+	// loginTwitter(page)
+	autoScroll(page)
+	scrapeTweets(page)
 
 	waitExit()
 
@@ -41,12 +45,30 @@ func loginTwitter(page *rod.Page) {
 	page.MustElement("button[data-testid='LoginForm_Login_Button']").MustClick()
 	page.WaitLoad()
 
+	autoScroll(page)
 	scrapeTweets(page)
 	fmt.Println("Logged in!")
 }
 
 func scrapeTweets(page *rod.Page) {
 	page.MustWaitLoad()
+	var tweets []string
+	tweetElements := page.MustElements("div[data-testid='tweetText']")
+
+	for _, tweetElement := range tweetElements {
+		tweets = append(tweets, tweetElement.MustText())
+	}
+
+	fmt.Println(len(tweets))
+
+}
+
+func autoScroll(page *rod.Page) {
+	for i := 0; i < 100; i++ {
+
+		page.Keyboard.Press(input.PageDown)
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func waitExit() {

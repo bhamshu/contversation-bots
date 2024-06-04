@@ -21,20 +21,31 @@ def filter_tweets():
 
     # Call the OpenAI API
     response = client.chat.completions.create(
-        model='gpt-3.5-turbo',
-        messages=[
-            {
+    model='gpt-3.5-turbo',
+    messages=[
+        {
             "role": "system",
-            "content": f"You will be provided with a list of identifiers and tweets, and your task is to return the comma separated value of the identifiers of the tweets which match these criteria: {criteria}."
-            },
-            {
+            "content": (
+                f"You will be provided with a list of identifiers and tweets, "
+                f"and your task is to return the comma-separated value of the identifiers of the tweets "
+                f"which match these criteria: <{criteria}>. \n\nJust give a comma separated list of ids. "
+                f"Don't give any other word like 'Tweet ID' along with the id, just give the original ids."
+                f" If there are no tweets matching the criteria, give an empty response."
+                f"Here is an example of the format:\n\n"
+                f"Input: {{'1': 'happy tweet1', '2': 'tweet2', '3': 'happy tweet3'}}\n"
+                f"Criteria: 'contain the word happy'\n"
+                f"Output: 1,3\n\n"
+                f"Now, process the following tweets:\n{tweets_with_identifiers}"
+            )
+        },
+        {
             "role": "user",
             "content": f"{tweets_with_identifiers}"
-            }
-        ],
-        temperature=0.7,
-        top_p=1
-    )
+        }
+    ],
+    temperature=0,
+    top_p=1)
+
     output = response.choices[0].message.content
 
     # Parse the output to get the filtered tweet IDs

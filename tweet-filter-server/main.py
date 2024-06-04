@@ -35,7 +35,7 @@ def filter_tweets():
         temperature=0.7,
         top_p=1
     )
-    output = response.choices[0].text.strip()
+    output = response.data.choices[0].text.strip()
 
     # Parse the output to get the filtered tweet IDs
     if output:

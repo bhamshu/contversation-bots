@@ -20,8 +20,8 @@ def filter_tweets():
     tweets_with_identifiers += "\nOutput: List the IDs of the tweets that match the prompt, separated by commas."
 
     # Call the OpenAI API
-    response = client.completions.create(
-        model='text-davinci-003',
+    response = client.chat.completions.create(
+        model='gpt-3.5-turbo',
         messages=[
             {
             "role": "system",

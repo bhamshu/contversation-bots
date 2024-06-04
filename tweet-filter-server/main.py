@@ -32,7 +32,6 @@ def filter_tweets():
             "content": f"{tweets_with_identifiers}"
             }
         ],
-        prompt=tweets_with_identifiers,
         temperature=0.7,
         top_p=1
     )

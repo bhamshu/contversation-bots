@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -23,6 +24,10 @@ type ScrapedData struct {
 	Criteria string         `json:"criteria"`
 }
 
+type ResponseData struct {
+	Filtered []string `json:"filtered_tweets"`
+}
+
 var dataScrapped ScrapedData
 
 func main() {
@@ -31,12 +36,13 @@ func main() {
 		Headless(false).
 		MustLaunch()
 	browser := rod.New().ControlURL(u).MustConnect()
-	page := browser.MustPage("https://x.com/narendramodi")
+	page := browser.MustPage("https://x.com/ManjaroLinux")
 
 	page.MustWaitLoad()
 
 	// loginTwitter(page)
-	autoScrollAndScrape(page)
+	detectStabilityAndScrape(page)
+	// autoScrollAndScrape(page)
 
 	waitExit()
 
@@ -60,61 +66,111 @@ func loginTwitter(page *rod.Page, email string, password string, uname string) {
 	fmt.Println("Logged in!")
 }
 
-func autoScrollAndScrape(page *rod.Page) {
-	var allTweets = make(map[int]string, 1)
-	for i := 0; i < 10; i++ {
+var i = 0
 
-		page.Keyboard.Press(input.PageDown)
-		page.Keyboard.Press(input.PageDown)
-		page.Keyboard.Press(input.PageDown)
-		page.Keyboard.Press(input.PageDown)
-		page.Keyboard.Press(input.PageDown)
-		page.Keyboard.Press(input.PageDown)
-
+func detectStabilityAndScrape(page *rod.Page) {
+	for {
+		var allTweets = make(map[int]string, 1)
+		var allTweetsWithId = make(map[int]string, 1)
+		page.WaitDOMStable(5*time.Second, 1.0)
 		tweetElements := page.MustElements("article[data-testid='tweet']")
-
 		for i, tweetElement := range tweetElements {
+			fmt.Println(tweetElement.MustText())
+			tweets[tweetElement] = tweetElement.MustText()
+			tweetDataElement := tweetElement.MustElement(("div[data-testid='tweetText']"))
+			allTweets[i+1] = tweetDataElement.MustText()
+			id, err := tweetDataElement.Attribute("id")
 
-			if tweets[tweetElement] != "" {
-				continue
-			} else {
-				tweets[tweetElement] = tweetElement.MustText()
-				tweetData := tweetElement.MustElement(("div[data-testid='tweetText']")).MustText()
-				allTweets[i+1] = tweetData
-				tweetsData = append(tweetsData, tweetData)
-				// fmt.Println(tweetData)
-				// fmt.Println()
+			if err != nil {
+				log.Fatal("Attribute Not found")
 			}
 
+			allTweetsWithId[i+1] = *id
+
+			// page.MustEval(fmt.Sprintf(`document.getElementById("%s").setAttribute("style", "display:none;")`, allTweetsWithId[1]))
+			i++
+			fmt.Println(i)
 		}
-
-		count += len(tweets)
-
-		time.Sleep(500 * time.Millisecond)
-
 	}
-	dataScrapped.Tweets = allTweets
-	dataScrapped.Criteria = "which tweets are about technology."
-	dataJson, error := json.Marshal(dataScrapped)
-
-	if error != nil {
-		log.Fatal("Error in requestbody")
-	}
-	resp, err := http.Post("http://3.109.112.234/filter_tweets", "application/json", bytes.NewBuffer(dataJson))
-
-	if err != nil {
-		log.Fatal(resp)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Failed to read response body: %s", err)
-	}
-
-	fmt.Println("POST response:", string(body))
 }
+
+// func autoScrollAndScrape(page *rod.Page) {
+// 	var allTweets = make(map[int]string, 1)
+// 	var allTweetsWithId = make(map[int]string, 1)
+// 	for i := 0; i < 3; i++ {
+
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+// 		page.Keyboard.Press(input.PageDown)
+
+// 		tweetElements := page.MustElements("article[data-testid='tweet']")
+
+// 		for i, tweetElement := range tweetElements {
+
+// 			if tweets[tweetElement] != "" {
+// 				continue
+// 			} else {
+// 				tweets[tweetElement] = tweetElement.MustText()
+// 				tweetDataElement := tweetElement.MustElement(("div[data-testid='tweetText']"))
+// 				allTweets[i+1] = tweetDataElement.MustText()
+// 				id, err := tweetDataElement.Attribute("id")
+// 				if err != nil {
+// 					log.Fatal("Attribute Not found")
+// 				}
+// 				allTweetsWithId[i+1] = *id
+// 				tweetsData = append(tweetsData, tweetDataElement.MustText())
+// 				fmt.Println(tweetDataElement.MustText())
+// 				fmt.Println()
+// 			}
+
+// 		}
+
+// 		count += len(tweets)
+
+// 		time.Sleep(2 * time.Second)
+
+// 	}
+
+// 	dataScrapped.Tweets = allTweets
+// 	dataScrapped.Criteria = "technology"
+// 	dataJson, error := json.Marshal(dataScrapped)
+
+// 	if error != nil {
+// 		log.Fatal("Error in requestbody")
+// 	}
+// 	resp, err := http.Post("http://3.109.112.234/filter_tweets", "application/json", bytes.NewBuffer(dataJson))
+
+// 	if err != nil {
+// 		log.Fatal(resp)
+// 	}
+
+// 	defer resp.Body.Close()
+
+// 	body, err := io.ReadAll(resp.Body)
+
+// 	if err != nil {
+// 		log.Fatalf("Failed to read response body: %s", err)
+// 	}
+
+// 	var dumpData ResponseData
+// 	error = json.Unmarshal(body, &dumpData)
+
+// 	if error != nil {
+// 		log.Fatal("Error decoding data.")
+// 	}
+
+// 	fmt.Println("POST response:", string(body))
+
+// 	for _, data := range dumpData.Filtered {
+// 		val, _ := strconv.Atoi(data)
+// 		fmt.Printf("Post Resp : %s \n", allTweets[val])
+// 	}
+
+// }
 
 func waitExit() {
 	fmt.Println("Press Enter to exit...")

@@ -1,22 +1,16 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/launcher"
 )
 
 var tweets = make(map[*rod.Element]string, 1)
-var tweetsData = make([]string, 1)
+// var tweetsData = make([]string, 1)
 var count int = 0
 
 type ScrapedData struct {
@@ -61,8 +55,6 @@ func loginTwitter(page *rod.Page, email string, password string, uname string) {
 	page.MustElement("input[name='password']").Input(password)
 	page.MustElement("button[data-testid='LoginForm_Login_Button']").MustClick()
 	page.WaitLoad()
-
-	autoScrollAndScrape(page)
 	fmt.Println("Logged in!")
 }
 
@@ -88,8 +80,7 @@ func detectStabilityAndScrape(page *rod.Page) {
 			allTweetsWithId[i+1] = *id
 
 			// page.MustEval(fmt.Sprintf(`document.getElementById("%s").setAttribute("style", "display:none;")`, allTweetsWithId[1]))
-			i++
-			fmt.Println(i)
+
 		}
 	}
 }

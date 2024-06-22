@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "X.com Parser2.0",
+  "version": "1.0",
+  "description": "A Chrome extension to parse and display content from x.com.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "webRequest",
+    "webRequestBlocking",
+    "scripting",
+    "tabs",
+    "https://x.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://x.com/*"
+  ]
+}

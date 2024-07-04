@@ -1,6 +1,7 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'updatePopup') {
-      chrome.runtime.sendMessage({ action: 'updatePopup', content: request.content });
-    }
-  });
-  
+chrome.webRequest.onBeforeRequest.addListener(
+  function (details) {
+    return { redirectUrl: "http://localhost:5000" };
+  },
+  { urls: ["*://x.com/*", "*://*.x.com/*"] },
+  ["blocking"]
+);

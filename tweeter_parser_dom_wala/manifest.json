@@ -11,7 +11,9 @@
       "scripting",
       "tabs",
       "storage",
-      "https://x.com/*"
+      "https://x.com/*",
+      "webRequest",
+      "webRequestBlocking"
     ],
     "background": {
       "service_worker": "background.js"
@@ -21,6 +23,9 @@
         "matches": ["https://x.com/*"],
         "js": ["content.js"]
       }
+    ],
+    "host-permission":[
+      "https://x.com/*"
     ]
   }
   

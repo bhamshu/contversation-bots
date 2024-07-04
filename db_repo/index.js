@@ -29,21 +29,25 @@ let model;
 })();
 
 getEmbedding = async (text) => {
+    // wait for the model to get load 
+
     const embeddings = await model.embed([text]);
     const embedding = embeddings.arraySync()[0];
     return embedding;
 }
 app.post("/tweet", async (req, res) => {
     const message = req.body;
+    console.log(message);
     // add this data only if it does not exist
-    const tweet = await prisma.tweet.findUnique({
+    let tweet = await prisma.tweet.findUnique({
         where: {
             tweetUrl: message.tweetUrl
         }
     });
 
     if (!tweet) {
-        await prisma.tweet.create({
+        console.log("Adding tweet to the database");
+        tweet=await prisma.tweet.create({
             data: {
                 userName: message.userName,
                 isVerified: message.isVerified,
@@ -56,18 +60,21 @@ app.post("/tweet", async (req, res) => {
                 numberOfComments: message.numberOfComments,
             },
         });
-    }
-    // add a vector to the Pinecone inde
-    const embeddings = await getEmbedding(tweet.tweetText);
-    const vector = {
-        id: tweet.id,
-        embedding: embeddings,
-        metadata: {
-            url: tweet.tweetUrl
+
+        console.log('tweet', tweet);    
+        // add a vector to the Pinecone inde
+        const embeddings = await getEmbedding(tweet.tweetText);
+        // console.log(embeddings);
+        const vector = {
+            id: tweet.id.toString(),
+            values: embeddings,
+            metadata: {
+                url: tweet.tweetUrl
+            }
         }
+        const dataindb = await index.upsert([vector]);
+        res.json(dataindb);
     }
-    const dataindb = await index.upsert([vector]);
-    res.json(dataindb);
 });
 
 app.get("/tweets", async (req, res) => {
@@ -76,20 +83,31 @@ app.get("/tweets", async (req, res) => {
 });
 
 app.get("/search", async (req, res) => {
-    const { query } = req.body;
+    // const { query } = req.body
+    const query = req.query.query;
     console.log(query);
     const queryVector = await getEmbedding(query);
-    console.log(queryVector);
+    // console.log(queryVector);
     const response = await index.namespace("").query({
 
         vector: queryVector,
-        topK:2,
+        topK: 100,
         includeMetadata: true
     })
-    console.log(response);
-    // const { matches } = 
-})
-
+    // console.log(response);
+    let { matches } = response;
+    // console.log(matches);
+    matches=matches.map(item => (Number)(item.id))
+    // console.log(matches)
+    let tweets = await prisma.tweet.findMany({
+        where: {
+            id: {
+                in: matches 
+            }
+        }
+    });
+    res.json(tweets);
+});
 
 app.listen(3000, () => {
     console.log("Server is running on http://localhost:3000");

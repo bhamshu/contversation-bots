@@ -1,0 +1,36 @@
+#results {
+    display: flex; /* Display results in a row */
+    flex-wrap: wrap; /* Wrap results to next line */
+    justify-content: space-between; /* Space between results */
+}
+.tweet-card {
+	background-color: #f5f8fa; /* Light grey background */
+	border: 1px solid #e1e8ed; /* Light grey border */
+	border-radius: 8px; /* Rounded corners */
+	padding: 20px; /* Padding inside the card */
+	margin-bottom: 20px; /* Space between cards */
+	max-width: 500px; /* Maximum width of the card */
+}
+
+.tweet-card h3 {
+	color: #14171a; /* Dark text color for the user name */
+	margin-bottom: 5px; /* Space below the user name */
+}
+
+.tweet-card p {
+	color: #657786; /* Lighter text color for tweet details */
+	margin: 5px 0; /* Vertical margin for spacing */
+	line-height: 1.5; /* Line height for readability */
+}
+
+.tweet-card p:nth-child(2) { /* Styling for the verified status */
+	color: #1da1f2; /* Twitter blue for emphasis */
+	font-weight: bold; /* Make verified status bold */
+}
+
+.tweet-card p:nth-child(7), /* Likes */
+.tweet-card p:nth-child(8), /* Retweets */
+.tweet-card p:nth-child(9) { /* Comments */
+	font-weight: bold; /* Make engagement numbers bold */
+	color: #14171a; /* Darker color for emphasis */
+}

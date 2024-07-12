@@ -1,14 +1,76 @@
+// configurations 
+// ======================================================================= // 
+const limit = 10;
+let todo = false;
+let cnt = 0;
+let serverwslink = "ws://localhost:3000"
+// ======================================================================= // 
+const createWebSocket = (serverwslink) => {
+    let ws = new WebSocket(serverwslink);
+
+    ws.onopen = () => {
+        console.log('Connected to the WebSocket server');
+        let msg = { type: 'scrapper', data: 'Connected to the WebSocket server' };
+        ws.send(JSON.stringify(msg));
+    };
+
+    ws.onmessage = (msg) => {
+        // console.log('Message from server:', event.data);
+        const { type, data } = JSON.parse(msg.data);
+        console.log('Message from server:', type, data);
+    };
+
+    ws.onclose = () => {
+        console.log('Disconnected from the WebSocket server');
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        console.error('WebSocket error details:', {
+            isTrusted: error.isTrusted,
+            type: error.type,
+            target: error.target,
+            currentTarget: error.currentTarget,
+            eventPhase: error.eventPhase,
+            timeStamp: error.timeStamp
+        });
+    };
+    return ws;
+}
+const ws = createWebSocket(serverwslink);
 const functionality = () => {
+    // if (todo) {
+    //     todo = false;
+
+    // }
+    // else {
+    //     todo = true;
+    // ws.close();
+    // ws = createWebSocket(serverwslink);
     parseXcomContent();
-    window.open("http://localhost:5000", '_blank');
+    if (cnt) return;
+    cnt = 1;
+    const userId = getUser();
+    window.open(`http://localhost:5000/?userId=${userId}`, '_blank');
+}
+// const userId = getUser()
+const getUser = () => {
+    // 
+    const $ = (selector, context = document) => context.querySelector(selector);
+    const user_name = $('a[data-testid="AppTabBar_Profile_Link"]').href.split('/')[3];
+    // console.log('user_name : ', user_name);
+    return user_name;
 }
 function parseXcomContent() {
+    // define a set of urls
+    // const urls = []// as set 
+    const urls = new Set();
     const wait = (ms = 1000) => new Promise((resolve) => setTimeout(resolve, ms));
-    
+
     const extract_data = (post) => {
         const $ = (selector, context = post) => context.querySelector(selector);
-        console.log('post : ', post);
-        
+        // console.log('post : ', post);
+
         try {
             let user_name = $('div[data-testid="User-Name"] div[dir="ltr"] span span').textContent.trim();
             let isVerified = $('svg[aria-label="Verified account"]') ? true : false;
@@ -35,42 +97,41 @@ function parseXcomContent() {
             return null;
         }
     }
+    // function sendDataToWebSocket(data) {
+    //     chrome.runtime.sendMessage({ type: 'SEND_DATA', data: data });
+    // }
     const insertTweetData = async (data) => {
         console.log("Data to be inserted: ", data);
-        try {
-            const response = await fetch('http://localhost:3000/tweet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            } else {
-                console.log("Data successfully inserted", await response.json());
-            }
-        } catch (error) {
-            console.error("Error inserting data: ", error);
-        }
+        const msg = { type: 'tweet', data: data };
+        ws.send(JSON.stringify(msg));
     };
-    
+
     const handlePosts = () => {
         const possibleXposts = document.querySelectorAll('[data-testid="cellInnerDiv"]');
         possibleXposts.forEach((post) => {
             const data = extract_data(post);
-            if (data) insertTweetData(data);
+            if (data && !urls.has(data.tweetUrl)) {
+                insertTweetData(data);
+                urls.add(data.tweetUrl);
+            }
         });
     };
-    
+
     const scrollAndWaitForPosts = async () => {
         window.scrollBy(0, window.innerHeight);
         await wait(2000);  // Wait for 1 second for the page to load more posts
         handlePosts();  // Update the posts
     };
     const main = async () => {
-        for (let i = 0; i < 5; i++) {
+        // let startTime = Date.now();
+        // while (true) {
+        //     await scrollAndWaitForPosts();
+        //     if (Date.now() - startTime >= 100000) {
+        //         break;
+        //     }
+        // }
+        // console.log('parsed ', urls.size, ' posts');
+        for (let i = 0; i < limit; i++) {
             await scrollAndWaitForPosts();
         }
     };
@@ -91,7 +152,13 @@ const addParseButton = () => {
     button.style.borderRadius = '5px';
     button.style.cursor = 'pointer';
     document.body.appendChild(button);
-    ourbutton = button;
     button.addEventListener('click', functionality);
 };
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => 
+// {
+//     if (message.type === 'CONSOLE_LOG')
+//     {
+//         console.log('Message from background:', message.data);
+//     }
+// })
 addParseButton();

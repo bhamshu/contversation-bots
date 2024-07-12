@@ -2,7 +2,6 @@
   "name": "tweeter_parser",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,10 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^5.16.0",
-    "cheerio": "^1.0.0-rc.12"
-  },
-  "devDependencies": {
-    "prisma": "^5.16.0"
+    "@prisma/client": "^5.16.0"
   }
 }

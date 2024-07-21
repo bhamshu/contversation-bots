@@ -25,3 +25,12 @@ model Tweet {
   numberOfRetweets  String
   numberOfComments  String
 }
+
+model redditPost {
+  id                Int      @id @default(autoincrement())
+  userName          String
+  subreddit         String
+  timestamp         DateTime
+  postTitle         String
+  postUrl           String   @unique
+}

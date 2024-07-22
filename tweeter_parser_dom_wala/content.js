@@ -26,14 +26,6 @@ const createWebSocket = (serverwslink) => {
 
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        console.error('WebSocket error details:', {
-            isTrusted: error.isTrusted,
-            type: error.type,
-            target: error.target,
-            currentTarget: error.currentTarget,
-            eventPhase: error.eventPhase,
-            timeStamp: error.timeStamp
-        });
     };
     return ws;
 }
@@ -48,22 +40,18 @@ const functionality = () => {
     // ws.close();
     // ws = createWebSocket(serverwslink);
     parseXcomContent();
-    if (cnt) return;
+    if (cnt == 0) {
+        const userId = getUser();
+        window.open(`http://localhost:5000?userId=${userId}`, '_blank');
+    } 
     cnt = 1;
-    const userId = getUser();
-    window.open(`http://localhost:5000/?userId=${userId}`, '_blank');
 }
-// const userId = getUser()
 const getUser = () => {
-    // 
     const $ = (selector, context = document) => context.querySelector(selector);
     const user_name = $('a[data-testid="AppTabBar_Profile_Link"]').href.split('/')[3];
-    // console.log('user_name : ', user_name);
     return user_name;
 }
 function parseXcomContent() {
-    // define a set of urls
-    // const urls = []// as set 
     const urls = new Set();
     const wait = (ms = 1000) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -76,7 +64,7 @@ function parseXcomContent() {
             let isVerified = $('svg[aria-label="Verified account"]') ? true : false;
             let user_handle = $('div[data-testid="User-Name"] a[tabindex="-1"]').innerText;
             let tweet_timestamp = $('time').getAttribute('datetime');
-            let tweet_text = $('div[data-testid="tweetText"]').textContent.trim();
+            let text = $('div[data-testid="tweetText"]').textContent.trim();
             let tweet_url = $('a[role="link"][href*="/status/"]').getAttribute('href');
             let number_of_likes = $('button[data-testid="like"] span').innerText;
             let number_of_retweets = $('button[data-testid="retweet"] span').innerText;
@@ -86,7 +74,7 @@ function parseXcomContent() {
                 isVerified: isVerified,
                 userHandle: user_handle,
                 tweetTimestamp: tweet_timestamp,
-                tweetText: tweet_text,
+                text: text,
                 tweetUrl: tweet_url,
                 numberOfLikes: number_of_likes,
                 numberOfRetweets: number_of_retweets,
@@ -97,9 +85,6 @@ function parseXcomContent() {
             return null;
         }
     }
-    // function sendDataToWebSocket(data) {
-    //     chrome.runtime.sendMessage({ type: 'SEND_DATA', data: data });
-    // }
     const insertTweetData = async (data) => {
         console.log("Data to be inserted: ", data);
         const msg = { type: 'tweet', data: data };
@@ -131,9 +116,10 @@ function parseXcomContent() {
         //     }
         // }
         // console.log('parsed ', urls.size, ' posts');
-        for (let i = 0; i < limit; i++) {
+        // for (let i = 1; i <= limit; i++) {
+        while(true)
             await scrollAndWaitForPosts();
-        }
+        // }
     };
     main();
 }

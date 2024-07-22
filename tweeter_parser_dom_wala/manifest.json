@@ -11,21 +11,19 @@
       "scripting",
       "tabs",
       "storage",
-      "https://x.com/*",
+      "https://x.com/",
       "webRequest",
-      "webRequestBlocking"
+      "webRequestBlocking",
+      "http://localhost:5000/"
     ],
     "background": {
       "service_worker": "background.js"
     },
     "content_scripts": [
       {
-        "matches": ["https://x.com/*"],
+        "matches": ["https://x.com/home"],
         "js": ["content.js"]
       }
-    ],
-    "host-permission":[
-      "https://x.com/*"
     ]
   }
   

@@ -19,7 +19,8 @@ const wss = new WebSocket.Server({ server });
 server.listen(3000, () => {
     console.log("Server is running on 3000");
 });
-const treshold = 0.01;
+const treshold = 0;
+
 setInterval(() => {
     console.log("Clients");
     console.log("no of clients", clients.size);
@@ -27,94 +28,127 @@ setInterval(() => {
         console.log(userId, client.queries);
     })
 }, 10000);
-// websockurl = "ws://localhost:3000";
-
-// app.use(express.json());
-// app.use(cors());
 
 let scrappers = []; // List of all connected scrappers
-// let clients = []; // List of all connected clients
-
 let clients = new Map(); // Map => userId : {ws, queries, urls}
 
-const sendToClient = async (tweet) => {
+const sendToClient = async (post, source) => {
+    console.log("here");
+    console.log("checking new post,", post);
     for (let [userId, client] of clients) {
         let flag = 0;
         const { ws, queries } = client;
         console.log("Sending to clients ");
         console.log("Queries", queries);
+
         for (let query of queries) {
             const score = await fetch('http://localhost:5001', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ type: 'check', query: query, tweetText: tweet.tweetText })
+                body: JSON.stringify({ type: 'check', query: query, text: post.text })
             });
             const data = await score.json();
             console.log("onchecking", data);
             console.log("Score", data.score);
             if (data.score > treshold) {
-                send(ws, "queryResult", { tweet, query });
+                send(ws, "queryResult", { tweet: post, query: query, source: source });
             }
         }
     }
 }
-
-const insertData = async (message) => {
-    // console.log(message);
+const insertTweet = async (message) => {
     await prisma.$connect();
-    // add this data only if it does not exist
+    // if this tweet does not exist then add it to the database
     let tweet = await prisma.tweet.findUnique({
         where: {
             tweetUrl: message.tweetUrl
         }
     });
-    try {
-        if (!tweet) {
-            console.log("Adding tweet to the database");
-            tweet = await prisma.tweet.create({
+    console.log("here");
+    if (!tweet) {
+        console.log("hereagain");
+        tweet = await prisma.tweet.create({
+            data: {
+                userName: message.userName,
+                isVerified: message.isVerified,
+                userHandle: message.userHandle,
+                tweetTimestamp: message.tweetTimestamp,
+                text: message.text,
+                tweetUrl: message.tweetUrl,
+                numberOfLikes: message.numberOfLikes,
+                numberOfRetweets: message.numberOfRetweets,
+                numberOfComments: message.numberOfComments,
+            },
+        });
+        console.log("Tweet", tweet);
+        insertToSmartDB({ id: tweet.id, text: tweet.text, source: "twitter" });
+        sendToClient(tweet, "twitter");
+    }
+}
+const insertReddit = async (message) => {
+    await prisma.$connect();
+    let reddit = await prisma.reddit.findUnique({
+        where: {
+            redditUrl: message.redditUrl
+        }
+    });
+    if (!reddit) {
+        try {
+            reddit = await prisma.reddit.create({
                 data: {
                     userName: message.userName,
-                    isVerified: message.isVerified,
                     userHandle: message.userHandle,
-                    tweetTimestamp: message.tweetTimestamp,
-                    tweetText: message.tweetText,
-                    tweetUrl: message.tweetUrl,
-                    numberOfLikes: message.numberOfLikes,
-                    numberOfRetweets: message.numberOfRetweets,
+                    postTimestamp: message.postTimestamp,
+                    text: message.text,
+                    redditUrl: message.redditUrl,
+                    numberOfUpvotes: message.numberOfUpvotes,
                     numberOfComments: message.numberOfComments,
                 },
             });
-
-            console.log('tweet', tweet);
-            // sent to port 5001 for processing 
-            const msg = { type: 'tweet', data: tweet };
-            const mes = JSON.stringify(msg);
-            const response = await fetch('http://localhost:5001', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: mes
-            });
-            if (response.status === 200) {
-                console.log("Data sent to processing server");
-            }
-            else {
-                console.log("Error sending data to processing server");
-            }
+            insertToSmartDB({ id: reddit.id, text: reddit.text, source: "reddit" });
+            sendToClient(reddit, "reddit");
         }
-        else
-            return null;
+        catch {
+            return;
+        }
     }
-    catch {
-        return null;
+}
+const insertData = async (data) => {
+    console.log("Inserting Data", data);
+    await prisma.$connect();
+    let { source, message } = data;
+    if (source === "twitter") {
+        try {
+            await insertTweet(message);
+        }
+        catch {
+            return;
+        }
     }
+}
+const insertToSmartDB = (message) => {
+    const { id, text, source } = message;
+    console.log("Inserting to Smart DB");
+    const msg = { type: 'insert', data: { id, text, source } };
+    console.log("Message", msg);
+    const mes = JSON.stringify(msg);
+    fetch('http://localhost:5001', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: mes
+    }).then((response) => {
 
-    // check the new tweets score if good then send to the client
-    sendToClient(tweet);
-    return tweet;
+        if (response.status === 200) {
+            console.log("Data sent to processing server");
+        }
+        else {
+            console.log("Error sending data to processing server");
+        }
+    });
 }
 const insertAllData = async () => {
     const tweets = await prisma.tweet.findMany();
@@ -227,13 +261,13 @@ const handleClientMessage = (ws) => {
         message = message.toString();
         message = JSON.parse(message);
         console.log("Client Message Received", message);
-        const { userId,type } = message;
+        const { userId, type } = message;
         switch (type) {
             case "getAllTweets":
                 await getAllTweets(ws);
                 break;
             case "removeQuery":
-                clients.get(userId).queries.delete(message.data); 
+                clients.get(userId).queries.delete(message.data);
                 break;
             case "search":
                 clients.get(userId).queries.add(message.data);
@@ -249,10 +283,10 @@ const handleScrapperMessage = (ws) => {
     return async (message) => {
         message = message.toString();
         message = JSON.parse(message);
-        console.log("Scrapper Message Received", message);
+        // console.log("Scrapper Message Received", message);
         const { type, data } = message;
         if (type === "tweet") {
-            await insertData(data);
+            await insertData({ source: "twitter", message: data });
         }
     }
 }
@@ -265,3 +299,21 @@ const WebSocketConnection = async (websock) => {
 }
 WebSocketConnection(wss);
 // insertAllData();
+
+const populatereddits = async () => {
+    const response = await fetch('http://localhost:5001', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ type: 'reddit' })
+    });
+    if (response.status === 200) {
+        console.log("Reddit Data sent to processing server");
+    }
+    else {
+        console.log("Error sending Reddit data to processing server");
+    }
+
+}
+// setInterval(populatereddits, 10000);    

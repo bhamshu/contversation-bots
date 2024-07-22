@@ -20,9 +20,9 @@ def handle_request():
         data = request.get_json()
         print(data)
         type = data['type']
-        if type == 'tweet':
+        if type == 'insert':
             data = data['data']
-            collection.add(documents=[data['tweetText']],ids= str(data['id']))
+            collection.add(documents=[data['text']],ids= str(data['id']))
             return { "status": 200 }
         if type == 'query':
             query = data['query']
@@ -31,7 +31,7 @@ def handle_request():
             return result
         if type == 'check':
             query = data['query']
-            ttext = data['tweetText']
+            ttext = data['text'] 
             em1 = default_ef([ttext])[0]
             em2 = default_ef([query])[0]
             sim = 1 - spatial.distance.cosine(em1, em2)

@@ -14,23 +14,23 @@ datasource db {
 }
 
 model Tweet {
-  id                Int      @id @default(autoincrement())
-  userName          String
-  isVerified        Boolean
-  userHandle        String   
-  tweetTimestamp    DateTime
-  tweetText         String   @db.Text
-  tweetUrl          String   @unique
-  numberOfLikes     String
-  numberOfRetweets  String
-  numberOfComments  String
+  id               Int      @id @default(autoincrement())
+  userName         String
+  isVerified       Boolean
+  userHandle       String
+  tweetTimestamp   DateTime
+  text             String   @db.Text
+  tweetUrl         String   @unique
+  numberOfLikes    String
+  numberOfRetweets String
+  numberOfComments String
 }
 
-model redditPost {
-  id                Int      @id @default(autoincrement())
-  userName          String
-  subreddit         String
-  timestamp         DateTime
-  postTitle         String
-  postUrl           String   @unique
+model reddit {
+  id        Int      @id @default(autoincrement())
+  userName  String
+  subreddit String
+  timestamp DateTime
+  postTitle String
+  postUrl   String   @unique
 }
